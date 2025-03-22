@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, File, UploadFile, Form, Request
-from app.models.schemas import PersonResponse
+from ..models.schemas import PersonResponse
 from facenet_pytorch import MTCNN, InceptionResnetV1
 from PIL import Image
 import io

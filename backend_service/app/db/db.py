@@ -8,6 +8,7 @@ load_dotenv()
 
 database_url = os.getenv("DATABASE_URL")
 
+
 class Database:
     def __init__(self):
         """
