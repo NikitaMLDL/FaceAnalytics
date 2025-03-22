@@ -4,30 +4,30 @@ from typing import Optional
 
 class FaceRecognizeRequest(BaseModel):
     """
-    Модель для валидации входных данных при запросе на распознавание лица.
+    Model for validating the input data in a face recognition request.
 
-    Атрибуты:
+    Attributes:
     - image: str
-        Строка в формате base64, представляющая изображение, или путь к изображению,
-        которое будет использовано для распознавания лица. Это изображение отправляется на сервер
-        для обработки и распознавания.
+        A base64-encoded string representing the image, or a path to the image
+        that will be used for face recognition. This image is sent to the server
+        for processing and recognition.
     """
-    image: str  # Строка base64 с изображением или путь к файлу
+    image: str  # Base64-encoded string of the image or a file path
 
 
 class PersonResponse(BaseModel):
     """
-    Модель для представления данных о распознанном человеке.
+    Model for representing data about a recognized person.
 
-    Атрибуты:
+    Attributes:
     - name: str
-        Имя распознанного человека.
+        The name of the recognized person.
     - description: Optional[str]
-        Описание человека (например, профессия или биографическая информация).
-        Может быть пустым, если описание отсутствует.
+        A description of the person (e.g., profession or biography).
+        Can be empty if no description is available.
     - confidence: float
-        Уверенность модели в распознавании лица, значение от 0 до 1.
-        Чем выше значение, тем более уверенно модель считает, что это лицо принадлежит конкретному человеку.
+        The model's confidence in the face recognition, with a value between 0 and 1.
+        The higher the value, the more confident the model is that the face belongs to the identified person.
     """
     name: str
     description: Optional[str] = None

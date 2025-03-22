@@ -9,14 +9,14 @@ logger = logging.getLogger(__name__)
 
 class VectorDBService:
     """
-    Класс для работы с базой данных FAISS.
+    Class for working with the FAISS database.
     """
 
     def __init__(self, index_file_path: str = "faiss_index.index"):
         """
-        Инициализация базы данных FAISS.
+        Initializes the FAISS database.
 
-        :param index_file_path: Путь к файлу для сохранения индекса.
+        :param index_file_path: Path to the file for saving the index.
         """
         self.index_file_path = index_file_path
         self.index = None
@@ -24,15 +24,15 @@ class VectorDBService:
 
     def load_index(self):
         """
-        Загрузка индекса из файла, если он существует.
-        Если файл индекса не существует, создается новый индекс.
+        Loads the index from a file if it exists.
+        If the index file does not exist, a new index is created.
         """
         if os.path.exists(self.index_file_path):
             try:
                 self.index = faiss.read_index(self.index_file_path)
-                logger.info(f"Индекс загружен из {self.index_file_path}")
+                logger.info(f"Index loaded from {self.index_file_path}")
             except Exception as e:
-                logger.error(f"Не удалось загрузить индекс: {str(e)}")
+                logger.error(f"Failed to load index: {str(e)}")
                 self.index = faiss.IndexFlatL2(512)
                 self.index = faiss.IndexIDMap(self.index)
         else:
@@ -41,58 +41,58 @@ class VectorDBService:
 
     def save_index(self):
         """
-        Сохранение индекса в файл.
+        Saves the index to a file.
         """
         try:
             faiss.write_index(self.index, self.index_file_path)
-            logger.info(f"Индекс сохранен в {self.index_file_path}")
+            logger.info(f"Index saved to {self.index_file_path}")
         except Exception as e:
-            logger.error(f"Ошибка сохранения индекса: {str(e)}")
+            logger.error(f"Error saving index: {str(e)}")
 
     def add_embeddings(self, embeddings: np.ndarray, ids: List[int]):
         """
-        Добавление эмбеддингов в FAISS.
+        Adds embeddings to FAISS.
 
-        :param embeddings: Векторы эмбеддингов для добавления.
-        :param ids: Список идентификаторов пользователей.
+        :param embeddings: Embedding vectors to be added.
+        :param ids: List of user identifiers.
         """
         try:
             embeddings = embeddings.astype(np.float32)
             self.index.add_with_ids(embeddings, np.array(ids, dtype=np.int64))
-            logger.info(f"Добавлено {len(ids)} эмбеддингов в FAISS.")
+            logger.info(f"Added {len(ids)} embeddings to FAISS.")
             self.save_index()
         except Exception as e:
-            logger.error(f"Ошибка добавления эмбеддингов в FAISS: {str(e)}")
+            logger.error(f"Error adding embeddings to FAISS: {str(e)}")
 
     def search_embedding(self, embedding: np.ndarray, k: int = 1) -> List[int]:
         """
-        Поиск наиболее похожих эмбеддингов.
+        Searches for the most similar embeddings.
 
-        :param embedding: Эмбеддинг, по которому нужно найти похожие.
-        :param k: Количество ближайших соседей для поиска.
-        :return: Список идентификаторов найденных пользователей с соответствующими confidence.
+        :param embedding: The embedding to search for similar ones.
+        :param k: The number of nearest neighbors to find.
+        :return: A list of user IDs and their corresponding confidence levels.
         """
         try:
             embedding = embedding.astype(np.float32).reshape(1, -1)
             distances, indices = self.index.search(embedding, k)
-            logger.info(f"Найдено {k} ближайших соседей.")
+            logger.info(f"Found {k} nearest neighbors.")
 
             confidence = []
             for i in range(k):
                 distance = distances[0][i]
                 if distance < 0.6:
-                    confidence.append(1.0)
+                    confidence.append(1.0)  # 100% confidence
                 elif distance < 1.0:
-                    confidence.append(0.95)
+                    confidence.append(0.95)  # 95% confidence
                 else:
-                    confidence.append(0.5)
+                    confidence.append(0.5)  # Low confidence if the distance is large
 
-            logger.info(f"Индексы пользователей: {indices[0].tolist()}")
+            logger.info(f"User indices: {indices[0].tolist()}")
             logger.info(f"Confidence: {confidence}")
 
             filtered_results = [(indices[0][i], confidence[i]) for i in range(k) if confidence[i] >= 0.8]
             return filtered_results
 
         except Exception as e:
-            logger.error(f"Ошибка поиска в FAISS: {str(e)}")
+            logger.error(f"Error searching in FAISS: {str(e)}")
             return []

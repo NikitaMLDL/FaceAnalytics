@@ -22,37 +22,37 @@ router = APIRouter()
 @router.post("/add_new_person", response_model=PersonResponse)
 async def add_new_person(request: Request, description: str = Form(...), file: UploadFile = File(...)):
     """
-    Добавление нового пользователя.
+    Adds a new user.
 
-    :param request: Объект запроса FastAPI.
-    :param description: Описание пользователя.
-    :param file: Изображение пользователя.
-    :return: Ответ с информацией о добавленном пользователе.
+    :param request: The FastAPI request object.
+    :param description: Description of the user.
+    :param file: Image of the user.
+    :return: Response with the added user's information.
     """
     db = request.app.state.db
     try:
-        logger.info(f"Начинаю обработку изображения для нового пользователя: {file.filename}")
+        logger.info(f"Processing image for the new user: {file.filename}")
 
         image_data = await file.read()
         img = Image.open(io.BytesIO(image_data)).convert("RGB")
 
         faces, _ = mtcnn.detect(img)
         if faces is None:
-            logger.warning("Лицо не найдено на изображении.")
-            raise HTTPException(status_code=400, detail="Лицо не найдено")
+            logger.warning("No face detected in the image.")
+            raise HTTPException(status_code=400, detail="No face detected")
 
         aligned_face = mtcnn(img)
         if aligned_face is None:
-            logger.warning("Не удалось выровнять лицо.")
-            raise HTTPException(status_code=400, detail="Не удалось выровнять лицо")
+            logger.warning("Failed to align the face.")
+            raise HTTPException(status_code=400, detail="Failed to align the face")
 
         embedding = resnet(aligned_face.unsqueeze(0)).detach().cpu().numpy().astype(np.float32)
 
         user_id_index = vector_db_service.search_embedding(embedding)
 
         if user_id_index and user_id_index[0] != -1:
-            logger.info(f"Найдено схожее лицо с ID: {user_id_index[0]}")
-            description_from_db = await db.get_description(user_id_index[0]) or "Нет описания"
+            logger.info(f"Found a similar face with ID: {user_id_index[0]}")
+            description_from_db = await db.get_description(user_id_index[0]) or "No description"
             return PersonResponse(
                 name=f"User {user_id_index[0]}",
                 description=description_from_db,
@@ -63,7 +63,7 @@ async def add_new_person(request: Request, description: str = Form(...), file: U
         await db.add_description(new_user_id, description)
         vector_db_service.add_embeddings(embedding, [new_user_id])
 
-        logger.info(f"Пользователь с ID {new_user_id} успешно добавлен.")
+        logger.info(f"User with ID {new_user_id} successfully added.")
 
         return PersonResponse(
             name="New User",
@@ -72,35 +72,35 @@ async def add_new_person(request: Request, description: str = Form(...), file: U
         )
 
     except Exception as e:
-        logger.error(f"Ошибка при добавлении пользователя: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Ошибка добавления пользователя: {str(e)}")
+        logger.error(f"Error adding user: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error adding user: {str(e)}")
 
 
 @router.post("/face_recognize", response_model=PersonResponse)
 async def face_recognize(request: Request, file: UploadFile = File(...)):
     """
-    Распознавание лица.
+    Face recognition.
 
-    :param request: Объект запроса FastAPI.
-    :param file: Изображение для распознавания.
-    :return: Ответ с информацией о найденном пользователе или о необходимости добавить нового.
+    :param request: The FastAPI request object.
+    :param file: Image for face recognition.
+    :return: Response with information about the found user or a prompt to add a new one.
     """
     db = request.app.state.db
     try:
-        logger.info(f"Начинаю обработку изображения для распознавания: {file.filename}")
+        logger.info(f"Processing image for recognition: {file.filename}")
 
         image_data = await file.read()
         img = Image.open(io.BytesIO(image_data)).convert("RGB")
 
         faces, _ = mtcnn.detect(img)
         if faces is None:
-            logger.warning("Лицо не найдено на изображении.")
-            raise HTTPException(status_code=400, detail="Лицо не найдено")
+            logger.warning("No face detected in the image.")
+            raise HTTPException(status_code=400, detail="No face detected")
 
         aligned_face = mtcnn(img)
         if aligned_face is None:
-            logger.warning("Не удалось выровнять лицо.")
-            raise HTTPException(status_code=400, detail="Не удалось выровнять лицо")
+            logger.warning("Failed to align the face.")
+            raise HTTPException(status_code=400, detail="Failed to align the face")
 
         embedding = resnet(aligned_face.unsqueeze(0)).detach().cpu().numpy().astype(np.float32)
 
@@ -108,8 +108,8 @@ async def face_recognize(request: Request, file: UploadFile = File(...)):
 
         if user_results:
             user_id, confidence = user_results[0]
-            description_from_db = await db.get_description(user_id) or "Нет описания"
-            logger.info(f"Найден пользователь с ID: {user_id} с confidence: {confidence}")
+            description_from_db = await db.get_description(user_id) or "No description"
+            logger.info(f"User found with ID: {user_id} and confidence: {confidence}")
 
             return PersonResponse(
                 name=f"User {user_id}",
@@ -117,13 +117,13 @@ async def face_recognize(request: Request, file: UploadFile = File(...)):
                 confidence=confidence
             )
 
-        logger.info("Пользователь не найден. Добавьте нового.")
+        logger.info("User not found. Please add a new one.")
         return PersonResponse(
             name="New User",
-            description="Пожалуйста, введите описание пользователя",
+            description="Please enter a description for the user",
             confidence=0.5
         )
 
     except Exception as e:
-        logger.error(f"Ошибка при обработке изображения: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Ошибка обработки изображения: {str(e)}")
+        logger.error(f"Error processing the image: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing the image: {str(e)}")

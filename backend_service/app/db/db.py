@@ -11,42 +11,42 @@ database_url = os.getenv("DATABASE_URL")
 class Database:
     def __init__(self):
         """
-        Инициализация класса Database.
+        Initializes the Database class.
         """
         self.pool = None
         self.logger = logging.getLogger(__name__)
 
     async def connect(self):
         """
-        Подключение к базе данных и инициализация пула соединений.
+        Connects to the database and initializes the connection pool.
 
-        Этот метод устанавливает соединение с базой данных и создает таблицы, если они не существуют.
+        This method establishes a connection to the database and creates tables if they do not exist.
         """
         try:
             self.pool = await asyncpg.create_pool(dsn=database_url)
-            self.logger.info("Подключение к базе данных успешно установлено.")
+            self.logger.info("Database connection successfully established.")
             await self.create_tables_if_not_exists()
         except Exception as e:
-            self.logger.error(f"Ошибка при подключении к базе данных: {str(e)}")
+            self.logger.error(f"Error connecting to the database: {str(e)}")
             raise
 
     async def close(self):
         """
-        Закрытие соединений с базой данных.
+        Closes database connections.
 
-        Этот метод закрывает пул соединений с базой данных, если он был открыт.
+        This method closes the connection pool if it was opened.
         """
         if self.pool:
             await self.pool.close()
-            self.logger.info("Соединение с базой данных закрыто.")
+            self.logger.info("Database connection closed.")
         else:
-            self.logger.warning("Пул соединений уже закрыт.")
+            self.logger.warning("Connection pool already closed.")
 
     async def create_tables_if_not_exists(self):
         """
-        Создание таблицы, если она не существует.
+        Creates the table if it does not exist.
 
-        Этот метод выполняет SQL-запрос для создания таблицы пользователей.
+        This method runs an SQL query to create a 'users' table if it does not already exist.
         """
         create_table_query = """
         CREATE TABLE IF NOT EXISTS users (
@@ -57,16 +57,16 @@ class Database:
         try:
             async with self.pool.acquire() as connection:
                 await connection.execute(create_table_query)
-                self.logger.info("Таблица users успешно создана или уже существует.")
+                self.logger.info("Users table created successfully or already exists.")
         except Exception as e:
-            self.logger.error(f"Ошибка при создании таблицы: {str(e)}")
+            self.logger.error(f"Error creating the table: {str(e)}")
 
     async def get_description(self, user_id: int) -> Optional[str]:
         """
-        Получение описания пользователя из базы данных.
+        Fetches the description of a user from the database.
 
-        :param user_id: Идентификатор пользователя.
-        :return: Описание пользователя, если оно существует, иначе None.
+        :param user_id: The user ID.
+        :return: The user's description if it exists, otherwise None.
         """
         try:
             async with self.pool.acquire() as connection:
@@ -77,19 +77,19 @@ class Database:
                     return result['description']
                 return None
         except Exception as e:
-            self.logger.error(f"Ошибка при получении описания пользователя {user_id}: {str(e)}")
+            self.logger.error(f"Error fetching description for user {user_id}: {str(e)}")
             return None
 
     async def add_description(self, user_id: int, description: str):
         """
-        Добавление нового описания пользователя в базу данных.
+        Adds a new description for a user in the database.
 
-        :param user_id: Идентификатор пользователя.
-        :param description: Описание пользователя.
+        :param user_id: The user ID.
+        :param description: The description of the user.
         """
         try:
             if self.pool is None:
-                self.logger.error("Ошибка: соединение с базой данных не установлено (pool = None).")
+                self.logger.error("Error: database connection not established (pool = None).")
                 return
 
             async with self.pool.acquire() as connection:
@@ -97,16 +97,16 @@ class Database:
                     "INSERT INTO users (id, description) VALUES ($1, $2)",
                     user_id, description
                 )
-                self.logger.info(f"Описание для пользователя {user_id} успешно добавлено.")
+                self.logger.info(f"Description for user {user_id} successfully added.")
         except Exception as e:
-            self.logger.error(f"Ошибка при добавлении описания для пользователя {user_id}: {str(e)}")
+            self.logger.error(f"Error adding description for user {user_id}: {str(e)}")
 
     async def update_description(self, user_id: int, description: str):
         """
-        Обновление описания пользователя в базе данных.
+        Updates the description of a user in the database.
 
-        :param user_id: Идентификатор пользователя.
-        :param description: Новое описание пользователя.
+        :param user_id: The user ID.
+        :param description: The new description for the user.
         """
         try:
             async with self.pool.acquire() as connection:
@@ -115,18 +115,18 @@ class Database:
                     description, user_id
                 )
                 if result:
-                    self.logger.info(f"Описание для пользователя {user_id} успешно обновлено.")
+                    self.logger.info(f"Description for user {user_id} successfully updated.")
                 else:
-                    self.logger.warning(f"Пользователь с ID {user_id} не найден.")
+                    self.logger.warning(f"User with ID {user_id} not found.")
         except Exception as e:
-            self.logger.error(f"Ошибка при обновлении описания пользователя {user_id}: {str(e)}")
+            self.logger.error(f"Error updating description for user {user_id}: {str(e)}")
 
     async def user_exists(self, user_id: int) -> bool:
         """
-        Проверка, существует ли пользователь в базе данных.
+        Checks if a user exists in the database.
 
-        :param user_id: Идентификатор пользователя.
-        :return: True, если пользователь существует, иначе False.
+        :param user_id: The user ID.
+        :return: True if the user exists, otherwise False.
         """
         try:
             async with self.pool.acquire() as connection:
@@ -135,5 +135,5 @@ class Database:
                 )
                 return result is not None
         except Exception as e:
-            self.logger.error(f"Ошибка при проверке существования пользователя {user_id}: {str(e)}")
+            self.logger.error(f"Error checking existence of user {user_id}: {str(e)}")
             return False

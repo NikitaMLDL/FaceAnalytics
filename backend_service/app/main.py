@@ -12,19 +12,20 @@ db = Database()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Контекстный менеджер для управления подключением к базе данных.
+    Context manager for managing the database connection.
 
-    Этот метод подключает базу данных в начале работы приложения и закрывает соединение в конце.
+    This method connects to the database at the start of the application 
+    and closes the connection at the end.
     """
     await db.connect()
-    logger.info("Подключение к базе данных установлено.")
+    logger.info("Database connection established.")
 
     app.state.db = db
     
     yield
     
     await db.close()
-    logger.info("Соединение с базой данных закрыто.")
+    logger.info("Database connection closed.")
 
 app = FastAPI(lifespan=lifespan)
 
