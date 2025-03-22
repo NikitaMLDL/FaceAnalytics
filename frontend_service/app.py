@@ -6,18 +6,18 @@ from PIL import Image
 
 API_BASE_URL = "http://localhost:8000"
 
-st.title("Распознавание лиц")
+st.title("Face Recognition")
 
 if "description" not in st.session_state:
     st.session_state.description = ""
 
-uploaded_file = st.file_uploader("Загрузите изображение", type=["jpg", "png", "jpeg"])
+uploaded_file = st.file_uploader("Upload an image", type=["jpg", "png", "jpeg"])
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file)
-    st.image(image, caption="Загруженное изображение", use_container_width=True)
+    st.image(image, caption="Uploaded Image", use_container_width=True)
 
-    with st.spinner("Распознаем лицо..."):
+    with st.spinner("Recognizing face..."):
         buffered = io.BytesIO()
         image.save(buffered, format="JPEG")
         files = {"file": buffered.getvalue()}
@@ -25,22 +25,22 @@ if uploaded_file is not None:
 
     if response.status_code == 200:
         result = response.json()
-        st.success(f"Результат: {result['name']}")
-        st.write(f"Описание: {result['description']}")
+        st.success(f"Result: {result['name']}")
+        st.write(f"Description: {result['description']}")
 
         if result['name'] == "New User":
             st.session_state.description = ""
-            description = st.text_area("Введите описание для нового пользователя", value=st.session_state.description)
+            description = st.text_area("Enter a description for the new user", value=st.session_state.description)
 
-            if st.button("Добавить пользователя"):
+            if st.button("Add User"):
                 if not description.strip():
-                    st.error("Описание должно быть обязательным!")
+                    st.error("Description is required!")
                 else:
-                    with st.spinner("Добавляем пользователя..."):
+                    with st.spinner("Adding user..."):
                         files = {"file": buffered.getvalue()}
                         response_add = requests.post(f"{API_BASE_URL}/add_new_person", data={"description": description}, files=files)
 
                     if response_add.status_code == 200:
-                        st.success(f"Пользователь успешно добавлен!")
+                        st.success(f"User added successfully!")
                     else:
-                        st.error("Ошибка при добавлении пользователя")
+                        st.error("Error while adding the user")
