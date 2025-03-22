@@ -1,0 +1,6 @@
+*.csv
+__pycache__/
+*.pyc
+test.py
+.env
+faiss_index.index
