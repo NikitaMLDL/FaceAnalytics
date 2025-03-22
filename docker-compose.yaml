@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  backend_service:
+    build:
+      context: ./backend_service  # Папка с Dockerfile (НЕ с кодом!)
+    container_name: backend_service
+    ports:
+      - "8000:8000"  # Прокси-порт для FastAPI
+    networks:
+      - mynetwork
+
+  frontend_service:
+    build:
+      context: ./frontend_service  # Путь к папке с кодом Streamlit
+    container_name: frontend_service
+    ports:
+      - "8501:8501"  # Прокси-порт для Streamlit
+    depends_on:
+      - backend_service  # Запускать фронтенд после бэкенда
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+    driver: bridge

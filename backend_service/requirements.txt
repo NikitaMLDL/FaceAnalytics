@@ -1,0 +1,10 @@
+facenet-pytorch==2.6.0
+pillow==10.2.0
+torch==2.2.2
+torchvision==0.17.2
+tqdm==4.67.1
+uvicorn==0.34.0
+fastapi==0.115.11
+numpy==1.26.4
+faiss-cpu==1.10.0
+python-multipart
