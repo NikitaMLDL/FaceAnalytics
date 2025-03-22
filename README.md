@@ -51,4 +51,4 @@ docker network connect mynetwork frontend_service
 Distributed under the MIT License. See `LICENSE` for more information.
 
 ## Documentation
-For full documentation, visit: [FaceAnalytics Documentation](https://nikitamldl.github.io/FaceAnalytics/)
+You can view the full documentation [here](https://nikitamldl.github.io/FaceAnalytics/).
