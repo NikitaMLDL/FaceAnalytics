@@ -46,5 +46,9 @@ docker network create mynetwork
 docker network connect mynetwork backend_service
 docker network connect mynetwork frontend_service
 ```
+
 ## License
 Distributed under the MIT License. See `LICENSE` for more information.
+
+## Documentation
+You can view the full documentation [here](https://nikitamldl.github.io/FaceAnalytics/).
