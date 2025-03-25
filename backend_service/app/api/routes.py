@@ -7,6 +7,9 @@ import numpy as np
 from .faiss_service import VectorDBService
 import os
 import logging
+from collections import defaultdict
+from typing import List, Dict
+from .telegram_bot import send_telegram_message
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -79,13 +82,14 @@ async def add_new_person(request: Request, description: str = Form(...), file: U
 @router.post("/face_recognize", response_model=PersonResponse)
 async def face_recognize(request: Request, file: UploadFile = File(...)):
     """
-    Face recognition.
+    Face recognition with additional purchase data.
 
     :param request: The FastAPI request object.
     :param file: Image for face recognition.
-    :return: Response with information about the found user or a prompt to add a new one.
+    :return: Response with information about the found user and their purchases.
     """
     db = request.app.state.db
+    crm_db = request.app.state.crm_db  # Подключение к CRM базе
     try:
         logger.info(f"Processing image for recognition: {file.filename}")
 
@@ -109,21 +113,51 @@ async def face_recognize(request: Request, file: UploadFile = File(...)):
         if user_results:
             user_id, confidence = user_results[0]
             description_from_db = await db.get_description(user_id) or "No description"
-            logger.info(f"User found with ID: {user_id} and confidence: {confidence}")
+            
+            # Получение списка покупок пользователя
+            purchases = await crm_db.get_purchases_by_user_id(user_id)
 
+            # Получаем данные о продажах по дням и по продуктам
+            daily_sales, product_sales = calculate_sales(purchases)
+
+            logger.info(f"User found with ID: {user_id}, confidence: {confidence}, purchases: {purchases}")
+
+            await send_telegram_message(user_id, description_from_db)
             return PersonResponse(
                 name=f"User {user_id}",
                 description=description_from_db,
-                confidence=confidence
+                confidence=confidence,
+                purchases=purchases,
+                daily_sales=daily_sales,  # Добавляем данные о продажах по дням
+                product_sales=product_sales  # Добавляем данные о продажах по продуктам
             )
 
         logger.info("User not found. Please add a new one.")
+        # await send_telegram_message(0, "Новый пользователь, добавьте описание")   # 1
         return PersonResponse(
             name="New User",
             description="Please enter a description for the user",
-            confidence=0.5
+            confidence=0.5,
+            purchases=[],  # Пустой список, если пользователь не найден
+            daily_sales={},  # Пустые данные о продажах по дням
+            product_sales={}  # Пустые данные о продажах по продуктам
         )
 
     except Exception as e:
         logger.error(f"Error processing the image: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing the image: {str(e)}")
+
+
+def calculate_sales(purchases: List[dict]) -> tuple[Dict[str, float], Dict[str, float]]:
+    daily_sales = defaultdict(float)
+    product_sales = defaultdict(float)
+
+    for purchase in purchases:
+        # Преобразуем дату в строку (например, '2025-03-23')
+        purchase_date = purchase['purchase_date'].strftime('%Y-%m-%d')  # Преобразуем datetime в строку
+        daily_sales[purchase_date] += purchase['quantity']  # Суммируем по количеству на каждый день
+
+        # Для каждого продукта, считаем суммарные продажи по названию продукта
+        product_sales[purchase['product_name']] += purchase['quantity']
+
+    return dict(daily_sales), dict(product_sales)

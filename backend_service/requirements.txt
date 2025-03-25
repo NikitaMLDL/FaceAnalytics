@@ -8,3 +8,5 @@ fastapi==0.115.11
 numpy==1.26.4
 faiss-cpu==1.10.0
 python-multipart
+asyncio
+aiogram

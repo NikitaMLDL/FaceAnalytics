@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List, Dict
+from datetime import datetime
 
 
 class FaceRecognizeRequest(BaseModel):
@@ -15,20 +16,35 @@ class FaceRecognizeRequest(BaseModel):
     image: str  # Base64-encoded string of the image or a file path
 
 
+class Purchase(BaseModel):
+    product_name: str
+    quantity: int
+    purchase_date: datetime  # Оставляем как datetime
+
+
 class PersonResponse(BaseModel):
     """
-    Model for representing data about a recognized person.
+    Модель для представления данных о распознанном человеке, включая аналитику по покупкам.
 
     Attributes:
     - name: str
-        The name of the recognized person.
+        Имя распознанного человека.
     - description: Optional[str]
-        A description of the person (e.g., profession or biography).
-        Can be empty if no description is available.
+        Описание человека (например, профессия или биография).
+        Может быть пустым, если описание отсутствует.
     - confidence: float
-        The model's confidence in the face recognition, with a value between 0 and 1.
-        The higher the value, the more confident the model is that the face belongs to the identified person.
+        Уверенность модели в распознавании лица, значение от 0 до 1.
+        Чем выше значение, тем более уверена модель, что лицо принадлежит распознанному человеку.
+    - purchases: List[Purchase]
+        Список покупок, ассоциированных с человеком.
+    - daily_sales: Dict[str, float]
+        Данные о продажах по дням. Ключ - дата, значение - суммарная сумма покупок в этот день.
+    - product_sales: Dict[str, float]
+        Данные о продажах по продуктам. Ключ - название продукта, значение - суммарная сумма продаж.
     """
     name: str
     description: Optional[str] = None
     confidence: float
+    purchases: List[Purchase] = []  # Используем вложенную модель Purchase
+    daily_sales: Dict[str, float] = {}  # Продажи по дням
+    product_sales: Dict[str, float] = {}  # Продажи по продуктам
